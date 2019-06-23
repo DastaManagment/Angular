@@ -13,6 +13,9 @@ using Microsoft.Extensions.Options;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.EntityFrameworkCore.Sqlite;
 using Dating.API.Data;
+using Microsoft.AspNetCore.Authentication.JwtBearer;
+using Microsoft.IdentityModel.Tokens;
+using System.Text;
 
 namespace Dating.API
 {
@@ -28,10 +31,26 @@ namespace Dating.API
         // This method gets called by the runtime. Use this method to add services to the container.
         public void ConfigureServices(IServiceCollection services)
         {
-           services.AddDbContext<DataContext>(x => x.UseSqlServer(Configuration.GetConnectionString("DefaultConnection")));
-           services.AddMvc().SetCompatibilityVersion(CompatibilityVersion.Version_2_2);
-           services.AddCors();
-           
+            //ბაზასთან დასაკავშირებლად
+            services.AddDbContext<DataContext>(x => x.UseSqlServer(Configuration.GetConnectionString("DefaultConnection")));
+            services.AddMvc().SetCompatibilityVersion(CompatibilityVersion.Version_2_2);
+            services.AddCors();
+            //ინეტრფეისის და ინტერფეისის მეთოდების აღწერა 
+            services.AddScoped<IAuthRepository, AuthRepository>();
+            //როცა ავტორიზაციის ანოტაციას ვადებთ ფუნქციებს საწიროა მივახვედროთ რომელი ფუნქციონალით იმუშაოს
+            services.AddAuthentication(JwtBearerDefaults.AuthenticationScheme)
+                .AddJwtBearer(options =>
+                {
+                    options.TokenValidationParameters = new TokenValidationParameters
+                    {
+                        ValidateIssuerSigningKey = true,
+                        IssuerSigningKey = new SymmetricSecurityKey(Encoding.ASCII
+                        .GetBytes(Configuration.GetSection("AppSettings:Token").Value)),
+                        ValidateIssuer = false,
+                        ValidateAudience = false
+                    };
+                });
+
         }
         // This method gets called by the runtime. Use this method to configure the HTTP request pipeline.
         public void Configure(IApplicationBuilder app, IHostingEnvironment env)
@@ -46,8 +65,11 @@ namespace Dating.API
                 // app.UseHsts();
             }
 
-            // app.UseHttpsRedirection();
-            app.UseCors(x=>x.AllowAnyOrigin().AllowAnyMethod().AllowAnyHeader());
+            // app.UseHttpsRedirection(); ანგულარს რომ მისცე საშუალება რექუესთები გააგზავნოს და პასუხები მიიღოს
+            app.UseCors(x => x.AllowAnyOrigin().AllowAnyMethod().AllowAnyHeader());
+            //ConfigureServices ში გაწერილი აუსენთიფიკააციის მიხვედრება პროექტისთვის
+            app.UseAuthentication();
+
             app.UseMvc();
         }
     }

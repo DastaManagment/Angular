@@ -5,14 +5,21 @@ using System.Threading.Tasks;
 using Microsoft.AspNetCore.Mvc;
 using Dating.API.Data;
 using Microsoft.EntityFrameworkCore;
+using Microsoft.AspNetCore.Authorization;
 
 namespace Dating.API.Controllers
 {
+
+    [Authorize]
     [Route("api/[controller]")]
     [ApiController]
+    //როცა კონტროლერს ვაცხადებთ ContorllerBase კლასის შვილად ეს გვაძლევს საშუალებას მივიღოთ HTTP რესპონსები
+    //თუ იქნება მხოლოდ Controller -ის შვილობილი ეს გამოიყენება MVC ში რადგან გვაძლევს საშუალებას დავაბრუნოთ ვიუსთვის რესპონსი
     public class ValuesController : ControllerBase
     {
+        //ბაზასთან დასაკავშირებელი ცვლადის აღწერა 
         private readonly DataContext _context;
+        //ბაზასთან დაკავშირება
         public ValuesController (DataContext context){
             _context=context;
         }
@@ -26,6 +33,7 @@ namespace Dating.API.Controllers
             return Ok(values);
         }
 
+        [AllowAnonymous]
         // GET api/values/5
         [HttpGet("{id}")]
         public async Task<IActionResult> GetValue(int id)
